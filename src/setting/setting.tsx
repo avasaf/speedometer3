@@ -1,0 +1,412 @@
+import { React, Immutable, type IMState, type UseDataSource, ReactRedux, type Expression, getAppStore, DataSourceTypes, hooks, type IMDynamicStyleConfig, DynamicStyleType, type IMDynamicStyleTypes, appConfigUtils, dynamicStyleUtils } from 'jimu-core'
+import { builderAppSync, type AllWidgetSettingProps } from 'jimu-for-builder'
+import { SettingRow, SettingSection } from 'jimu-ui/advanced/setting-components'
+import { RichTextFormatKeys, type Editor } from 'jimu-ui/advanced/rich-text-editor'
+import type { IMConfig } from '../config'
+import { Switch, defaultMessages as jimuUiMessage, richTextUtils, TextArea, TextInput } from 'jimu-ui'
+import { ThemeColorPicker } from 'jimu-ui/basic/color-picker'
+import { DataSourceSelector } from 'jimu-ui/advanced/data-source-selector'
+import defaultMessages from './translations/default'
+import { ExpressionInput, ExpressionInputType } from 'jimu-ui/advanced/expression-builder'
+import { replacePlaceholderTextContent } from '../utils'
+import { RichFormatClear, RichTextFormats } from './editor-plugins'
+import { DynamicStyleBuilderSwitch } from 'jimu-ui/advanced/dynamic-style-builder'
+
+
+type SettingProps = AllWidgetSettingProps<IMConfig>
+
+const SUPPORTED_TYPES = Immutable([
+  DataSourceTypes.FeatureLayer,
+  DataSourceTypes.SceneLayer,
+  DataSourceTypes.BuildingComponentSubLayer,
+  DataSourceTypes.OrientedImageryLayer,
+  DataSourceTypes.ImageryLayer,
+  DataSourceTypes.SubtypeGroupLayer,
+  DataSourceTypes.SubtypeSublayer
+])
+const TEXT_CONDITION_DYNAMIC_STYLE_OPTIONS: IMDynamicStyleTypes = Immutable([
+  DynamicStyleType.Text,
+  DynamicStyleType.Background,
+])
+const TEXT_ARCADE_DYNAMIC_STYLE_OPTIONS: IMDynamicStyleTypes = Immutable([
+  DynamicStyleType.Text,
+  DynamicStyleType.Background
+])
+const defaultExpressionInputTypes = Immutable([ExpressionInputType.Static, ExpressionInputType.Attribute, ExpressionInputType.Statistics, ExpressionInputType.Expression])
+const DefaultUseDataSources = Immutable([])
+const Setting = (props: SettingProps): React.ReactElement => {
+  const {
+    id,
+    config: propConfig,
+    useDataSources: propUseDataSources,
+    useDataSourcesEnabled,
+    onSettingChange
+  } = props
+
+  const placeholderEditable = getAppStore().getState().appStateInBuilder?.appInfo?.type === 'Web Experience Template'
+  const style = propConfig.style
+  const wrap = style?.wrap ?? true
+  const showSpeedometer = propConfig.showSpeedometer ?? true
+  const gaugeColor = propConfig.speedometerGaugeColor ?? '#ccc'
+  const needleColor = propConfig.speedometerNeedleColor ?? 'red'
+  const tickFont = propConfig.speedometerTickFont ?? 'Arial'
+  const tickSize = propConfig.speedometerTickSize ?? 10
+  const tickColor = propConfig.speedometerTickColor ?? '#000'
+  const textFont = propConfig.speedometerTextFont ?? 'Arial'
+  const textSize = propConfig.speedometerTextSize ?? 12
+  const textBold = propConfig.speedometerTextBold ?? false
+  const textColor = propConfig.speedometerTextColor ?? '#000'
+  const padding = propConfig.speedometerPadding ?? 0
+
+  const [localFont, setLocalFont] = React.useState(textFont)
+  const [localSize, setLocalSize] = React.useState(String(textSize))
+  const [localTickFont, setLocalTickFont] = React.useState(tickFont)
+  const [localTickSize, setLocalTickSize] = React.useState(String(tickSize))
+  const [localPadding, setLocalPadding] = React.useState(String(padding))
+
+  React.useEffect(() => { setLocalFont(textFont) }, [textFont])
+  React.useEffect(() => { setLocalSize(String(textSize)) }, [textSize])
+  React.useEffect(() => { setLocalTickFont(tickFont) }, [tickFont])
+  React.useEffect(() => { setLocalTickSize(String(tickSize)) }, [tickSize])
+  React.useEffect(() => { setLocalPadding(String(padding)) }, [padding])
+  const enableDynamicStyle = style?.enableDynamicStyle ?? false
+  const dynamicStyleConfig = style?.dynamicStyleConfig
+  const text = propConfig.text
+  const placeholder = propConfig.placeholder
+  const placeholderText = React.useMemo(() => richTextUtils.getHTMLTextContent(placeholder) ?? '', [placeholder])
+  const expressions = React.useMemo(() => Object.values(richTextUtils.getAllExpressions(text)?.asMutable({ deep: true }) ?? {}), [text])
+  const tooltip = propConfig.tooltip
+  const appStateInBuilder = ReactRedux.useSelector((state: IMState) => state.appStateInBuilder)
+  const mutableStateVersion = appStateInBuilder?.widgetsMutableStateVersion?.[id]?.editor
+  const isInlineEditing = appStateInBuilder?.widgetsRuntimeInfo?.[id]?.isInlineEditing
+  const hasDataSource = useDataSourcesEnabled && propUseDataSources?.length > 0
+  const [editor, setEditor] = React.useState<Editor>(null)
+  const [openTip, setOpenTip] = React.useState(false)
+
+  React.useEffect(() => {
+    const mutableStoreManager = window._appWindow._mutableStoreManager
+    const editor = mutableStoreManager?.getStateValue([id, 'editor']) ?? null
+    setEditor(editor)
+  }, [mutableStateVersion, id])
+
+  const translate = hooks.useTranslation(defaultMessages, jimuUiMessage)
+
+  const handleDataSourceChange = (useDataSources: UseDataSource[]): void => {
+    builderAppSync.publishWidgetToolbarStateChangeToApp(id, ['text-expression', 'text-arcade'])
+    if (useDataSources == null) {
+      const config = propConfig.set('style', propConfig.style?.without('enableDynamicStyle').without('dynamicStyleConfig'))
+      onSettingChange({
+        id,
+        config
+      })
+    } else {
+      // If change dataview or main ds, should update or reset dynamic style settings.
+      if (propConfig.style?.enableDynamicStyle) {
+        let config
+        const updatedStyle = dynamicStyleUtils.updateDynamicStyleWhenUseDataSourcesChange(
+          id,
+          propUseDataSources,
+          Immutable(useDataSources),
+          Immutable(propConfig.style.dynamicStyleConfig),
+        )
+        if (updatedStyle) {
+          config = propConfig.setIn(['style', 'dynamicStyleConfig'], updatedStyle)
+        } else {
+          config = propConfig.set('style', propConfig.style?.without('enableDynamicStyle').without('dynamicStyleConfig'))
+        }
+        onSettingChange({
+          id,
+          config,
+          useDataSources
+        })
+      }else{
+        onSettingChange({
+        id,
+        useDataSources
+      })
+      }
+    }
+
+  }
+
+  const toggleUseDataEnabled = (): void => {
+    builderAppSync.publishWidgetToolbarStateChangeToApp(id, ['text-expression', 'text-arcade'])
+    const config = propConfig.without('tooltip').set('style', propConfig.style?.without('enableDynamicStyle').without('dynamicStyleConfig'))
+    const dataSourcesEnabled = !useDataSourcesEnabled
+    if ((tooltip || enableDynamicStyle) && !dataSourcesEnabled) {
+      onSettingChange({
+        id,
+        config,
+        useDataSourcesEnabled: dataSourcesEnabled
+      })
+    } else {
+      onSettingChange({ id, useDataSourcesEnabled: dataSourcesEnabled })
+    }
+  }
+
+  const toggleWrap = (): void => {
+    onSettingChange({
+      id,
+      config: propConfig.setIn(['style', 'wrap'], !wrap)
+    })
+  }
+
+  const toggleSpeedometer = (): void => {
+    onSettingChange({
+      id,
+      config: propConfig.set('showSpeedometer', !showSpeedometer)
+    })
+  }
+
+  const handleGaugeColorChange = (color: string): void => {
+    onSettingChange({
+      id,
+      config: propConfig.set('speedometerGaugeColor', color)
+    })
+  }
+
+  const handleNeedleColorChange = (color: string): void => {
+    onSettingChange({
+      id,
+      config: propConfig.set('speedometerNeedleColor', color)
+    })
+  }
+
+  const handleTickColorChange = (color: string): void => {
+    onSettingChange({
+      id,
+      config: propConfig.set('speedometerTickColor', color)
+    })
+  }
+
+  const handleTextColorChange = (color: string): void => {
+    onSettingChange({
+      id,
+      config: propConfig.set('speedometerTextColor', color)
+    })
+  }
+
+  const handlePaddingAccept = (value: number | string): void => {
+    const num = typeof value === 'number' ? value : parseInt(value)
+    if (!isNaN(num)) {
+      setLocalPadding(String(num))
+      onSettingChange({
+        id,
+        config: propConfig.set('speedometerPadding', num)
+      })
+    }
+  }
+
+  const handleTextFontAccept = (value: string): void => {
+    setLocalFont(value)
+    onSettingChange({
+      id,
+      config: propConfig.set('speedometerTextFont', value)
+    })
+  }
+
+  const handleTextSizeAccept = (value: number | string): void => {
+    const num = typeof value === 'number' ? value : parseInt(value)
+    if (!isNaN(num)) {
+      setLocalSize(String(num))
+      onSettingChange({
+        id,
+        config: propConfig.set('speedometerTextSize', num)
+      })
+    }
+  }
+
+  const toggleTextBold = (): void => {
+    onSettingChange({
+      id,
+      config: propConfig.set('speedometerTextBold', !textBold)
+    })
+  }
+
+  const handleTickFontAccept = (value: string): void => {
+    setLocalTickFont(value)
+    onSettingChange({
+      id,
+      config: propConfig.set('speedometerTickFont', value)
+    })
+  }
+
+  const handleTickSizeAccept = (value: number | string): void => {
+    const num = typeof value === 'number' ? value : parseInt(value)
+    if (!isNaN(num)) {
+      setLocalTickSize(String(num))
+      onSettingChange({
+        id,
+        config: propConfig.set('speedometerTickSize', num)
+      })
+    }
+  }
+
+  const handleTooltipChange = (expression: Expression): void => {
+    if (expression == null) {
+      return
+    }
+
+    onSettingChange({
+      id,
+      config: propConfig.set('tooltip', expression)
+    })
+    setOpenTip(false)
+  }
+
+  const handlePlaceholderTextChange = (text: string) => {
+    text = text.replace(/\n/mg, '')
+    const newPlaceholder = replacePlaceholderTextContent(placeholder, text)
+    onSettingChange({
+      id,
+      config: propConfig.set('placeholder', newPlaceholder)
+    })
+  }
+
+  const handleTextChange = (html: string, key?: RichTextFormatKeys, value?: any): void => {
+    const onlyPlaceholder = richTextUtils.isBlankRichText(text) && !!placeholder
+    const property = !isInlineEditing && onlyPlaceholder ? 'placeholder' : 'text'
+    html = property === 'text' ? appConfigUtils.restoreResourceUrl(html) : html
+    let config = propConfig.set(property, html)
+    if (!isInlineEditing && key === RichTextFormatKeys.Color) {
+      config = config.setIn(['style', 'color'], value)
+    }
+    onSettingChange({ id, config })
+  }
+
+  const expInputForms = React.useMemo(() => hasDataSource ? defaultExpressionInputTypes : Immutable([ExpressionInputType.Static]), [hasDataSource])
+
+  const onDynamicStyleBuilderConfigChange = (dynamicStyleConfig: IMDynamicStyleConfig) => {
+    const config = propConfig.setIn(['style', 'dynamicStyleConfig'], dynamicStyleConfig)
+    onSettingChange({
+      id,
+      config
+    })
+  }
+
+  const handleDynamicStyleSwitchChange = (_, enabled) => {
+    let config = propConfig.setIn(['style', 'enableDynamicStyle'], enabled)
+    if (!enabled) {
+      config = config.set('style', config.style.without('dynamicStyleConfig'))
+    }
+    onSettingChange({
+      id,
+      config
+    })
+  }
+
+  return (
+    <div className='widget-setting-text jimu-widget-setting'>
+      <SettingSection>
+        <SettingRow>
+          <DataSourceSelector
+            isMultiple
+            types={SUPPORTED_TYPES}
+            useDataSources={propUseDataSources}
+            useDataSourcesEnabled={useDataSourcesEnabled}
+            onToggleUseDataEnabled={toggleUseDataEnabled}
+            onChange={handleDataSourceChange}
+            widgetId={id}
+          />
+        </SettingRow>
+      </SettingSection>
+
+      <SettingSection>
+        <SettingRow flow='no-wrap' tag='label' label={translate('wrap')}>
+          <Switch checked={wrap} onChange={toggleWrap} />
+        </SettingRow>
+        <SettingRow label={translate('tooltip')} flow='wrap' role='group' aria-label={translate('tooltip')}>
+          <div className='w-100'>
+            <ExpressionInput
+              aria-label={translate('tooltip')}
+              autoHide useDataSources={hasDataSource ? propUseDataSources : DefaultUseDataSources} onChange={handleTooltipChange} openExpPopup={() => { setOpenTip(true) }}
+              expression={typeof tooltip === 'object' ? tooltip : null} isExpPopupOpen={openTip} closeExpPopup={() => { setOpenTip(false) }}
+              types={expInputForms}
+              widgetId={id}
+            />
+          </div>
+        </SettingRow>
+        {placeholderEditable && <SettingRow flow='wrap' label={translate('placeholder')}>
+          <TextArea aria-label={translate('placeholder')} defaultValue={placeholderText} onAcceptValue={handlePlaceholderTextChange}></TextArea>
+        </SettingRow>}
+        <SettingRow flow='no-wrap' tag='label' label={translate('showSpeedometer')}>
+          <Switch checked={showSpeedometer} onChange={toggleSpeedometer} />
+        </SettingRow>
+        {showSpeedometer && <>
+          <SettingRow className='mb-3' flow='no-wrap' label={translate('gaugeColor')}>
+            <ThemeColorPicker value={gaugeColor} onChange={handleGaugeColorChange} />
+          </SettingRow>
+          <SettingRow className='mb-3' flow='no-wrap' label={translate('needleColor')}>
+            <ThemeColorPicker value={needleColor} onChange={handleNeedleColorChange} />
+          </SettingRow>
+          <SettingRow className='mb-3' flow='no-wrap' label={translate('tickColor')}>
+            <ThemeColorPicker value={tickColor} onChange={handleTickColorChange} />
+          </SettingRow>
+          <SettingRow className='mb-3' flow='no-wrap' label={translate('tickFont')}>
+            <TextInput style={{ width: 120 }} value={localTickFont} onChange={(_e, v) => setLocalTickFont(v)} onAcceptValue={handleTickFontAccept} />
+          </SettingRow>
+          <SettingRow className='mb-3' flow='no-wrap' label={translate('tickSize')}>
+            <TextInput style={{ width: 80 }} type='number' value={localTickSize} onChange={(_e, v) => setLocalTickSize(v)} onAcceptValue={handleTickSizeAccept} />
+          </SettingRow>
+          <SettingRow className='mb-3' flow='no-wrap' label={translate('textColor')}>
+            <ThemeColorPicker value={textColor} onChange={handleTextColorChange} />
+          </SettingRow>
+          <SettingRow className='mb-3' flow='no-wrap' label={translate('textFont')}>
+            <TextInput style={{ width: 120 }} value={localFont} onChange={(_e, v) => setLocalFont(v)} onAcceptValue={handleTextFontAccept} />
+          </SettingRow>
+          <SettingRow className='mb-3' flow='no-wrap' label={translate('textSize')}>
+            <TextInput style={{ width: 80 }} type='number' value={localSize} onChange={(_e, v) => setLocalSize(v)} onAcceptValue={handleTextSizeAccept} />
+          </SettingRow>
+          <SettingRow className='mb-3' flow='no-wrap' label={translate('gaugePadding')}>
+            <TextInput style={{ width: 80 }} type='number' value={localPadding} onChange={(_e, v) => setLocalPadding(v)} onAcceptValue={handlePaddingAccept} />
+          </SettingRow>
+          <SettingRow className='mb-3' flow='no-wrap' tag='label' label={translate('textBold')}>
+            <Switch checked={textBold} onChange={toggleTextBold} />
+          </SettingRow>
+        </>}
+
+      </SettingSection>
+
+      {editor != null && <SettingSection>
+        <SettingRow flow='no-wrap' label={translate('textFormat')} role='group' aria-label={translate('textFormat')}>
+          <RichFormatClear
+            editor={editor}
+            onChange={handleTextChange}
+          />
+        </SettingRow>
+
+        <SettingRow>
+          <RichTextFormats
+            widgetId={id}
+            editor={editor}
+            defaultColor={propConfig.style?.color}
+            useDataSources={propUseDataSources}
+            onChange={handleTextChange}
+          />
+        </SettingRow>
+      </SettingSection>}
+      {hasDataSource &&
+        < SettingSection >
+          <SettingRow>
+            <DynamicStyleBuilderSwitch
+              widgetId={id}
+              disabled={isInlineEditing}
+              useDataSources={propUseDataSources}
+              expressions={expressions}
+              widgetDynamicContentCapability='multiple'
+              useIconsForArcade={false}
+              config={dynamicStyleConfig}
+              onChange={onDynamicStyleBuilderConfigChange}
+              switchChecked={enableDynamicStyle}
+              onSwitchChange={handleDynamicStyleSwitchChange}
+              conditionStyleTypes={TEXT_CONDITION_DYNAMIC_STYLE_OPTIONS}
+              arcacdeStyleTypes={TEXT_ARCADE_DYNAMIC_STYLE_OPTIONS}
+            />
+          </SettingRow>
+        </SettingSection>
+      }
+    </div >
+  )
+}
+
+export default Setting
