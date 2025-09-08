@@ -17,7 +17,7 @@ export interface SpeedometerProps {
   padding?: number
 }
 
-export const Speedometer = ({
+export function Speedometer({
   value,
   min = 0,
   max = 40,
@@ -32,7 +32,7 @@ export const Speedometer = ({
   tickFontSize = 10,
   padding = 0,
   thresholds
-}: SpeedometerProps): React.ReactElement => {
+}: SpeedometerProps): React.ReactElement {
   const ratio = Math.max(0, Math.min(1, (value - min) / (max - min)));
   const angle = ratio * 180 - 90;
 
@@ -126,4 +126,4 @@ export const Speedometer = ({
       </div>
     </div>
   );
-};
+}
