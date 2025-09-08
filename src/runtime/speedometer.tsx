@@ -40,9 +40,9 @@ export function Speedometer(props: SpeedometerProps): React.ReactElement {
   const angle = ratio * 180 - 90
 
   const sorted = thresholds ? [...thresholds].sort((a, b) => a.value - b.value) : []
-  const thresholdColor = sorted.length
-    ? (sorted.find(t => value <= t.value) || sorted[sorted.length - 1]).color
-    : gaugeColor
+  const active = sorted.find(t => value <= t.value) || sorted[sorted.length - 1]
+  const gaugeStroke = active ? active.color : gaugeColor
+  const needleStroke = active ? active.color : needleColor
 
   const count = 4
   const cx = 100
@@ -83,32 +83,28 @@ export function Speedometer(props: SpeedometerProps): React.ReactElement {
           fill: 'none',
           strokeLinecap: 'round',
           children: [
+            jsx('path', { key: 'arc-path', d: 'M 10 100 A 90 90 0 0 1 190 100', strokeWidth: 4, stroke: gaugeStroke }),
             jsx('g', {
-              key: 'arc',
-              stroke: thresholdColor,
+              key: 'ticks',
+              strokeWidth: 4,
+              stroke: gaugeStroke,
+              children: ticks.map((t, i) =>
+                jsx('line', { key: i, x1: t.x1, y1: t.y1, x2: t.x2, y2: t.y2 })
+              )
+            }),
+            jsx('g', {
+              key: 'minor',
+              strokeWidth: 2,
+              stroke: gaugeStroke,
               children: [
-                jsx('path', { key: 'arc-path', d: 'M 10 100 A 90 90 0 0 1 190 100', strokeWidth: 4 }),
-                jsx('g', {
-                  key: 'ticks',
-                  strokeWidth: 4,
-                  children: ticks.map((t, i) =>
-                    jsx('line', { key: i, x1: t.x1, y1: t.y1, x2: t.x2, y2: t.y2 })
-                  )
-                }),
-                jsx('g', {
-                  key: 'minor',
-                  strokeWidth: 2,
-                  children: [
-                    jsx('line', { key: 'top', x1: 100, y1: 88, x2: 100, y2: 82 }),
-                    jsx('line', { key: 'right', x1: 112, y1: 100, x2: 118, y2: 100 }),
-                    jsx('line', { key: 'bottom', x1: 100, y1: 112, x2: 100, y2: 118 }),
-                    jsx('line', { key: 'left', x1: 88, y1: 100, x2: 82, y2: 100 }),
-                    jsx('line', { key: 'ne', x1: 108, y1: 92, x2: 112, y2: 88 }),
-                    jsx('line', { key: 'se', x1: 108, y1: 108, x2: 112, y2: 112 }),
-                    jsx('line', { key: 'sw', x1: 92, y1: 108, x2: 88, y2: 112 }),
-                    jsx('line', { key: 'nw', x1: 92, y1: 92, x2: 88, y2: 88 })
-                  ]
-                })
+                jsx('line', { key: 'top', x1: 100, y1: 88, x2: 100, y2: 82 }),
+                jsx('line', { key: 'right', x1: 112, y1: 100, x2: 118, y2: 100 }),
+                jsx('line', { key: 'bottom', x1: 100, y1: 112, x2: 100, y2: 118 }),
+                jsx('line', { key: 'left', x1: 88, y1: 100, x2: 82, y2: 100 }),
+                jsx('line', { key: 'ne', x1: 108, y1: 92, x2: 112, y2: 88 }),
+                jsx('line', { key: 'se', x1: 108, y1: 108, x2: 112, y2: 112 }),
+                jsx('line', { key: 'sw', x1: 92, y1: 108, x2: 88, y2: 112 }),
+                jsx('line', { key: 'nw', x1: 92, y1: 92, x2: 88, y2: 88 })
               ]
             }),
             jsx('g', {
@@ -130,7 +126,7 @@ export function Speedometer(props: SpeedometerProps): React.ReactElement {
             }),
             jsx('g', {
               key: 'needle',
-              stroke: thresholds && thresholds.length ? thresholdColor : needleColor,
+              stroke: needleStroke,
               strokeWidth: 3,
               children: [
                 jsx('circle', { key: 'hub', cx: 100, cy: 100, r: 12, fill: 'none' }),
