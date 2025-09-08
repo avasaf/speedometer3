@@ -40,7 +40,8 @@ export const Speedometer = ({
     const sorted = [...thresholds].sort((a, b) => a.value - b.value)
     const match = sorted.find(t => value <= t.value) ?? sorted[sorted.length - 1]
     return match.color
-  }, [thresholds, value, gaugeColor])
+  }, [thresholds, value, gaugeColor]);
+
   const ticks = React.useMemo(() => {
     const count = 4
     const cx = 100
@@ -62,7 +63,8 @@ export const Speedometer = ({
       const label = Math.round(min + (max - min) * r)
       return { x1, y1, x2, y2, lx, ly, label }
     })
-  }, [min, max])
+  }, [min, max]);
+
   return (
     <div className='speedometer' style={{ width: '100%', height: '100%', marginTop: 8, padding }}>
       <svg
