@@ -3,6 +3,7 @@ import { DownDoubleOutlined } from 'jimu-icons/outlined/directional/down-double'
 import { styled, useTheme } from 'jimu-theme'
 import { RichTextDisplayer, type RichTextDisplayerProps, Scrollable, type ScrollableRefProps, type StyleSettings, type StyleState, styleUtils } from 'jimu-ui'
 import { Speedometer } from './speedometer'
+import type { Threshold } from '../config'
 
 const LeaveDelay = 500
 
@@ -22,6 +23,7 @@ export type DisplayerProps = Omit<RichTextDisplayerProps, 'sanitize'> & {
   speedometerTickFont?: string
   speedometerTickSize?: number
   speedometerPadding?: number
+  speedometerThresholds?: Threshold[]
 }
 
 const Root = styled('div')<StyleState<{ wrap: boolean, fadeLength: string }>>(({ theme, styleState }) => {
@@ -126,6 +128,7 @@ export function Displayer(props: DisplayerProps): React.ReactElement {
     speedometerTickFont,
     speedometerTickSize,
     speedometerPadding,
+    speedometerThresholds,
     ...others
   } = props
 
@@ -232,10 +235,10 @@ export function Displayer(props: DisplayerProps): React.ReactElement {
             tickFontFamily={speedometerTickFont}
             tickFontSize={speedometerTickSize}
             padding={speedometerPadding}
+            thresholds={speedometerThresholds}
           />
         )}
       </Scrollable>
-      {speed !== null && <Speedometer value={speed} />}
       {showFade && scrollable && !bottoming && <div className='text-fade text-fade-bottom'>
         <span className='arrow arrow-bottom rounded-circle mr-1'>
           <DownDoubleOutlined className='bounce' color={theme?.ref.palette?.black} />
