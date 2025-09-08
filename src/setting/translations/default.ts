@@ -11,5 +11,8 @@ export default {
   textFont: 'Value font',
   textSize: 'Value size',
   textBold: 'Value bold',
-  gaugePadding: 'Gauge padding'
+  gaugePadding: 'Gauge padding',
+  threshold1: 'Threshold 1',
+  threshold2: 'Threshold 2',
+  threshold3: 'Threshold 3'
 }
