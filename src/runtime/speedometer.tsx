@@ -33,37 +33,34 @@ export const Speedometer = ({
   padding = 0,
   thresholds
 }: SpeedometerProps): React.ReactElement => {
-  const ratio = Math.max(0, Math.min(1, (value - min) / (max - min)))
-  const angle = ratio * 180 - 90
-  const thresholdColor = React.useMemo(() => {
-    if (!thresholds || thresholds.length === 0) return gaugeColor
-    const sorted = [...thresholds].sort((a, b) => a.value - b.value)
-    const match = sorted.find(t => value <= t.value) ?? sorted[sorted.length - 1]
-    return match.color
-  }, [thresholds, value, gaugeColor]);
+  const ratio = Math.max(0, Math.min(1, (value - min) / (max - min)));
+  const angle = ratio * 180 - 90;
 
-  const ticks = React.useMemo(() => {
-    const count = 4
-    const cx = 100
-    const cy = 100
-    const outer = 90
-    const inner = 82
-    const labelRadius = 65
-    return Array.from({ length: count + 1 }, (_, i) => {
-      const r = i / count
-      const rad = Math.PI - r * Math.PI
-      const cos = Math.cos(rad)
-      const sin = Math.sin(rad)
-      const x1 = cx + outer * cos
-      const y1 = cy - outer * sin
-      const x2 = cx + inner * cos
-      const y2 = cy - inner * sin
-      const lx = cx + labelRadius * cos
-      const ly = cy - labelRadius * sin
-      const label = Math.round(min + (max - min) * r)
-      return { x1, y1, x2, y2, lx, ly, label }
-    })
-  }, [min, max]);
+  const sorted = thresholds ? [...thresholds].sort((a, b) => a.value - b.value) : [];
+  const thresholdColor = sorted.length
+    ? (sorted.find(t => value <= t.value) || sorted[sorted.length - 1]).color
+    : gaugeColor;
+
+  const count = 4;
+  const cx = 100;
+  const cy = 100;
+  const outer = 90;
+  const inner = 82;
+  const labelRadius = 65;
+  const ticks = Array.from({ length: count + 1 }, (_, i) => {
+    const r = i / count;
+    const rad = Math.PI - r * Math.PI;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const x1 = cx + outer * cos;
+    const y1 = cy - outer * sin;
+    const x2 = cx + inner * cos;
+    const y2 = cy - inner * sin;
+    const lx = cx + labelRadius * cos;
+    const ly = cy - labelRadius * sin;
+    const label = Math.round(min + (max - min) * r);
+    return { x1, y1, x2, y2, lx, ly, label };
+  });
 
   return (
     <div className='speedometer' style={{ width: '100%', height: '100%', marginTop: 8, padding }}>
@@ -128,5 +125,5 @@ export const Speedometer = ({
         </svg>
       </div>
     </div>
-  )
-}
+  );
+};
