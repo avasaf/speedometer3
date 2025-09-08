@@ -6,6 +6,7 @@ export interface SpeedometerProps {
   max?: number
   gaugeColor?: string
   needleColor?: string
+  thresholds?: { value: number, color: string }[]
   labelColor?: string
   labelFontFamily?: string
   labelFontSize?: number
@@ -29,10 +30,17 @@ export const Speedometer = ({
   tickColor = '#000',
   tickFontFamily = 'Arial',
   tickFontSize = 10,
-  padding = 0
+  padding = 0,
+  thresholds
 }: SpeedometerProps): React.ReactElement => {
   const ratio = Math.max(0, Math.min(1, (value - min) / (max - min)))
   const angle = ratio * 180 - 90
+  const thresholdColor = React.useMemo(() => {
+    if (!thresholds || thresholds.length === 0) return gaugeColor
+    const sorted = [...thresholds].sort((a, b) => a.value - b.value)
+    const match = sorted.find(t => value <= t.value) ?? sorted[sorted.length - 1]
+    return match.color
+  }, [thresholds, value, gaugeColor])
   const ticks = React.useMemo(() => {
     const count = 4
     const cx = 100
@@ -56,10 +64,12 @@ export const Speedometer = ({
     })
   }, [min, max])
   return (
-    <div className='speedometer' style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 8, padding }}>
-      <svg width='100%' height='100%' viewBox='0 0 200 140' xmlns='http://www.w3.org/2000/svg' aria-label='Gauge icon'>
+    <div className='speedometer' style={{ width: '100%', marginTop: 8, padding }}>
+      <div style={{ position: 'relative', width: '100%', paddingBottom: '70%' }}>
+        <svg viewBox='0 0 200 140' xmlns='http://www.w3.org/2000/svg' aria-label='Gauge icon'
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
         <g fill='none' strokeLinecap='round'>
-          <g stroke={gaugeColor}>
+          <g stroke={thresholdColor}>
             <path d='M 10 100 A 90 90 0 0 1 190 100' strokeWidth='4' />
             <g strokeWidth='4'>
               {ticks.map((t, i) => (
@@ -93,7 +103,7 @@ export const Speedometer = ({
               </text>
             ))}
           </g>
-          <g stroke={needleColor} strokeWidth='3'>
+          <g stroke={thresholds && thresholds.length ? thresholdColor : needleColor} strokeWidth='3'>
             <circle cx='100' cy='100' r='12' fill='none' />
             <line x1='100' y1='100' x2='100' y2='50' transform={`rotate(${angle} 100 100)`} />
           </g>
@@ -109,7 +119,8 @@ export const Speedometer = ({
         >
           {value.toFixed(0)} knt
         </text>
-      </svg>
+        </svg>
+      </div>
     </div>
   )
 }
