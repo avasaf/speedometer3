@@ -64,10 +64,14 @@ export const Speedometer = ({
     })
   }, [min, max])
   return (
-    <div className='speedometer' style={{ width: '100%', marginTop: 8, padding }}>
-      <div style={{ position: 'relative', width: '100%', paddingBottom: '70%' }}>
-        <svg viewBox='0 0 200 140' xmlns='http://www.w3.org/2000/svg' aria-label='Gauge icon'
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+    <div className='speedometer' style={{ width: '100%', height: '100%', marginTop: 8, padding }}>
+      <svg
+        viewBox='0 0 200 160'
+        xmlns='http://www.w3.org/2000/svg'
+        aria-label='Gauge icon'
+        preserveAspectRatio='xMidYMid meet'
+        style={{ width: '100%', height: '100%', overflow: 'visible' }}
+      >
         <g fill='none' strokeLinecap='round'>
           <g stroke={thresholdColor}>
             <path d='M 10 100 A 90 90 0 0 1 190 100' strokeWidth='4' />
@@ -110,7 +114,7 @@ export const Speedometer = ({
         </g>
         <text
           x='100'
-          y='135'
+          y='150'
           textAnchor='middle'
           fontSize={labelFontSize}
           fontFamily={labelFontFamily}
