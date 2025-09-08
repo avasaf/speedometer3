@@ -125,7 +125,8 @@ export const Speedometer = ({
         >
           {value.toFixed(0)} knt
         </text>
-      </svg>
+        </svg>
+      </div>
     </div>
   )
 }
