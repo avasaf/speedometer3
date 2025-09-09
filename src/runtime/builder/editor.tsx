@@ -72,7 +72,7 @@ export const Editor = (props: EditorProps): React.ReactElement => {
   const plugin = usePlugin(widgetId, useDataSources, enabled, onInitResizeHandler)
   const style = useStyle(text, useDataSources)
   const handleComplete = (value: string, placeholder: string) => {
-    const newValue = appConfigUtils.restoreResourceUrl(value)
+    const newValue = typeof appConfigUtils?.restoreResourceUrl === 'function' ? appConfigUtils.restoreResourceUrl(value) : value
     onComplete?.(newValue, placeholder)
   }
 

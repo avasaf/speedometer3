@@ -89,7 +89,10 @@ const Widget = (props: AllWidgetProps<IMConfig>): React.ReactElement => {
 
   const wrap = config.style?.wrap ?? true
   const color = config.style?.color
-  const text = React.useMemo(() => appConfigUtils.processResourceUrl(config.text), [config.text])
+  const text = React.useMemo(
+    () => (typeof appConfigUtils?.processResourceUrl === 'function' ? appConfigUtils.processResourceUrl(config.text) : config.text),
+    [config.text]
+  )
   const tooltip = config.tooltip
   const placeholder = translatePlaceholder(config.placeholder, intl)
   const useDataSources = useDataSourcesEnabled ? propUseDataSources : undefined
@@ -337,6 +340,7 @@ const Widget = (props: AllWidgetProps<IMConfig>): React.ReactElement => {
         speedometerTickFont={config.speedometerTickFont}
         speedometerTickSize={config.speedometerTickSize}
         speedometerPadding={config.speedometerPadding}
+        speedometerThresholds={config.speedometerThresholds}
       />
       <Popper open={isDynamicStyleSettingActive} offsetOptions={[0, 4]} css={getDynamicPreviewStyle()} autoUpdate shiftOptions={shiftOptions}
         flipOptions={flipOptions} placement='right-start' reference={rootRef} >
