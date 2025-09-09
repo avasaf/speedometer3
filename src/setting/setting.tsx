@@ -1,4 +1,4 @@
-import { React, Immutable, type IMState, type UseDataSource, ReactRedux, type Expression, getAppStore, DataSourceTypes, hooks, type IMDynamicStyleConfig, DynamicStyleType, type IMDynamicStyleTypes, appConfigUtils, dynamicStyleUtils } from 'jimu-core'
+import { React, Immutable, type IMState, type UseDataSource, ReactRedux, type Expression, getAppStore, DataSourceTypes, hooks, appConfigUtils } from 'jimu-core'
 import { builderAppSync, type AllWidgetSettingProps } from 'jimu-for-builder'
 import { SettingRow, SettingSection } from 'jimu-ui/advanced/setting-components'
 import { RichTextFormatKeys, type Editor } from 'jimu-ui/advanced/rich-text-editor'
@@ -10,7 +10,6 @@ import defaultMessages from './translations/default'
 import { ExpressionInput, ExpressionInputType } from 'jimu-ui/advanced/expression-builder'
 import { replacePlaceholderTextContent } from '../utils'
 import { RichFormatClear, RichTextFormats } from './editor-plugins'
-import { DynamicStyleBuilderSwitch } from 'jimu-ui/advanced/dynamic-style-builder'
 
 
 type SettingProps = AllWidgetSettingProps<IMConfig>
@@ -23,14 +22,6 @@ const SUPPORTED_TYPES = Immutable([
   DataSourceTypes.ImageryLayer,
   DataSourceTypes.SubtypeGroupLayer,
   DataSourceTypes.SubtypeSublayer
-])
-const TEXT_CONDITION_DYNAMIC_STYLE_OPTIONS: IMDynamicStyleTypes = Immutable([
-  DynamicStyleType.Text,
-  DynamicStyleType.Background,
-])
-const TEXT_ARCADE_DYNAMIC_STYLE_OPTIONS: IMDynamicStyleTypes = Immutable([
-  DynamicStyleType.Text,
-  DynamicStyleType.Background
 ])
 const defaultExpressionInputTypes = Immutable([ExpressionInputType.Static, ExpressionInputType.Attribute, ExpressionInputType.Statistics, ExpressionInputType.Expression])
 const DefaultUseDataSources = Immutable([])
@@ -87,7 +78,6 @@ const Setting = (props: SettingProps): React.ReactElement => {
   const text = propConfig.text
   const placeholder = propConfig.placeholder
   const placeholderText = React.useMemo(() => richTextUtils.getHTMLTextContent(placeholder) ?? '', [placeholder])
-  const expressions = React.useMemo(() => Object.values(richTextUtils.getAllExpressions(text)?.asMutable({ deep: true }) ?? {}), [text])
   const tooltip = propConfig.tooltip
   const appStateInBuilder = ReactRedux.useSelector((state: IMState) => state.appStateInBuilder)
   const mutableStateVersion = appStateInBuilder?.widgetsMutableStateVersion?.[id]?.editor
@@ -106,47 +96,17 @@ const Setting = (props: SettingProps): React.ReactElement => {
 
   const handleDataSourceChange = (useDataSources: UseDataSource[]): void => {
     builderAppSync.publishWidgetToolbarStateChangeToApp(id, ['text-expression', 'text-arcade'])
-    if (useDataSources == null) {
-      const config = propConfig.set('style', propConfig.style?.without('enableDynamicStyle').without('dynamicStyleConfig'))
-      onSettingChange({
-        id,
-        config
-      })
-    } else {
-      // If change dataview or main ds, should update or reset dynamic style settings.
-      if (propConfig.style?.enableDynamicStyle) {
-        let config
-        const updatedStyle = dynamicStyleUtils.updateDynamicStyleWhenUseDataSourcesChange(
-          id,
-          propUseDataSources,
-          Immutable(useDataSources),
-          Immutable(propConfig.style.dynamicStyleConfig),
-        )
-        if (updatedStyle) {
-          config = propConfig.setIn(['style', 'dynamicStyleConfig'], updatedStyle)
-        } else {
-          config = propConfig.set('style', propConfig.style?.without('enableDynamicStyle').without('dynamicStyleConfig'))
-        }
-        onSettingChange({
-          id,
-          config,
-          useDataSources
-        })
-      }else{
-        onSettingChange({
-        id,
-        useDataSources
-      })
-      }
-    }
-
+    onSettingChange({
+      id,
+      useDataSources
+    })
   }
 
   const toggleUseDataEnabled = (): void => {
     builderAppSync.publishWidgetToolbarStateChangeToApp(id, ['text-expression', 'text-arcade'])
-    const config = propConfig.without('tooltip').set('style', propConfig.style?.without('enableDynamicStyle').without('dynamicStyleConfig'))
     const dataSourcesEnabled = !useDataSourcesEnabled
-    if ((tooltip || enableDynamicStyle) && !dataSourcesEnabled) {
+    if (tooltip && !dataSourcesEnabled) {
+      const config = propConfig.without('tooltip')
       onSettingChange({
         id,
         config,
@@ -315,25 +275,6 @@ const Setting = (props: SettingProps): React.ReactElement => {
 
   const expInputForms = React.useMemo(() => hasDataSource ? defaultExpressionInputTypes : Immutable([ExpressionInputType.Static]), [hasDataSource])
 
-  const onDynamicStyleBuilderConfigChange = (dynamicStyleConfig: IMDynamicStyleConfig) => {
-    const config = propConfig.setIn(['style', 'dynamicStyleConfig'], dynamicStyleConfig)
-    onSettingChange({
-      id,
-      config
-    })
-  }
-
-  const handleDynamicStyleSwitchChange = (_, enabled) => {
-    let config = propConfig.setIn(['style', 'enableDynamicStyle'], enabled)
-    if (!enabled) {
-      config = config.set('style', config.style.without('dynamicStyleConfig'))
-    }
-    onSettingChange({
-      id,
-      config
-    })
-  }
-
   return (
     <div className='widget-setting-text jimu-widget-setting'>
       <SettingSection>
@@ -436,26 +377,6 @@ const Setting = (props: SettingProps): React.ReactElement => {
           />
         </SettingRow>
       </SettingSection>}
-      {hasDataSource &&
-        < SettingSection >
-          <SettingRow>
-            <DynamicStyleBuilderSwitch
-              widgetId={id}
-              disabled={isInlineEditing}
-              useDataSources={propUseDataSources}
-              expressions={expressions}
-              widgetDynamicContentCapability='multiple'
-              useIconsForArcade={false}
-              config={dynamicStyleConfig}
-              onChange={onDynamicStyleBuilderConfigChange}
-              switchChecked={enableDynamicStyle}
-              onSwitchChange={handleDynamicStyleSwitchChange}
-              conditionStyleTypes={TEXT_CONDITION_DYNAMIC_STYLE_OPTIONS}
-              arcacdeStyleTypes={TEXT_ARCADE_DYNAMIC_STYLE_OPTIONS}
-            />
-          </SettingRow>
-        </SettingSection>
-      }
     </div >
   )
 }
