@@ -99,9 +99,19 @@ export const getDefaultValue = (enabled: boolean, value: string, placeholder: st
   return sanitizeHTML(defaultValue)
 }
 
+// Safely parse Arcade content from text. Older Experience Builder versions
+// (e.g. ArcGIS Enterprise 11.5) do not expose `richTextUtils.getArcades`, so
+// fall back to an empty config map when the helper is missing.
+const getArcadesFromText = (text: string): IMArcadeContentConfigMap => {
+  const getArcades = (richTextUtils as any)?.getArcades as
+    | ((t: string) => IMArcadeContentConfigMap)
+    | undefined
+  return getArcades ? getArcades(text) : ({} as IMArcadeContentConfigMap)
+}
+
 // / Initialize the count of other Arcade content that can be added to the widget.
 export const getOtherArcadeContentCount = (text: string, widgetId: string): number => {
-  const arcadeContentConfigMap: IMArcadeContentConfigMap = richTextUtils.getArcades(text)
+  const arcadeContentConfigMap = getArcadesFromText(text)
   const arcadeContentCount = Object.keys(arcadeContentConfigMap).length
   const lastCanAddArcadeContentCount = arcadeContentUtils.getWidgetRestAvailableArcadeContentCount(widgetId)
   // If the last can add arcade content count is Infinity, it means that the widget has no limit on the number of arcade content
@@ -120,7 +130,7 @@ export const canAddArcadeContent = (otherArcadeContentCount: number, text: strin
     getAppStore().dispatch(appActions.widgetToolbarStateChange(widgetId, ['text-arcade']))
     return
   }
-  const arcadeContentConfigMap: IMArcadeContentConfigMap = richTextUtils.getArcades(text)
+  const arcadeContentConfigMap = getArcadesFromText(text)
   const arcadeContentCount = Object.keys(arcadeContentConfigMap).length
   const canAdd = MAX_DATA_SOURCES_PROFILE_ARCADE_CONTENT_PER_PAGE - otherArcadeContentCount - arcadeContentCount > 0
   getAppStore().dispatch(appActions.widgetStatePropChange(widgetId, 'canAddArcadeContent', canAdd))

@@ -57,18 +57,31 @@ const Setting = (props: SettingProps): React.ReactElement => {
   const textBold = propConfig.speedometerTextBold ?? false
   const textColor = propConfig.speedometerTextColor ?? '#000'
   const padding = propConfig.speedometerPadding ?? 0
+  const thresholds = propConfig.speedometerThresholds ?? [
+    { value: 1, color: '#ff0000' },
+    { value: 2, color: '#ffff00' },
+    { value: 3, color: '#00ff00' }
+  ]
 
   const [localFont, setLocalFont] = React.useState(textFont)
   const [localSize, setLocalSize] = React.useState(String(textSize))
   const [localTickFont, setLocalTickFont] = React.useState(tickFont)
   const [localTickSize, setLocalTickSize] = React.useState(String(tickSize))
   const [localPadding, setLocalPadding] = React.useState(String(padding))
+  const [localThreshold1, setLocalThreshold1] = React.useState(String(thresholds[0].value))
+  const [localThreshold2, setLocalThreshold2] = React.useState(String(thresholds[1].value))
+  const [localThreshold3, setLocalThreshold3] = React.useState(String(thresholds[2].value))
 
   React.useEffect(() => { setLocalFont(textFont) }, [textFont])
   React.useEffect(() => { setLocalSize(String(textSize)) }, [textSize])
   React.useEffect(() => { setLocalTickFont(tickFont) }, [tickFont])
   React.useEffect(() => { setLocalTickSize(String(tickSize)) }, [tickSize])
   React.useEffect(() => { setLocalPadding(String(padding)) }, [padding])
+  React.useEffect(() => {
+    setLocalThreshold1(String(thresholds[0].value))
+    setLocalThreshold2(String(thresholds[1].value))
+    setLocalThreshold3(String(thresholds[2].value))
+  }, [thresholds])
   const enableDynamicStyle = style?.enableDynamicStyle ?? false
   const dynamicStyleConfig = style?.dynamicStyleConfig
   const text = propConfig.text
@@ -186,6 +199,30 @@ const Setting = (props: SettingProps): React.ReactElement => {
     })
   }
 
+  const handleThresholdValueAccept = (index: number, value: number | string): void => {
+    const num = typeof value === 'number' ? value : parseInt(value)
+    if (!isNaN(num)) {
+      index === 0 && setLocalThreshold1(String(num))
+      index === 1 && setLocalThreshold2(String(num))
+      index === 2 && setLocalThreshold3(String(num))
+      const arr = [...thresholds]
+      arr[index] = { ...arr[index], value: num }
+      onSettingChange({
+        id,
+        config: propConfig.set('speedometerThresholds', arr)
+      })
+    }
+  }
+
+  const handleThresholdColorChange = (index: number, color: string): void => {
+    const arr = [...thresholds]
+    arr[index] = { ...arr[index], color }
+    onSettingChange({
+      id,
+      config: propConfig.set('speedometerThresholds', arr)
+    })
+  }
+
   const handlePaddingAccept = (value: number | string): void => {
     const num = typeof value === 'number' ? value : parseInt(value)
     if (!isNaN(num)) {
@@ -266,7 +303,9 @@ const Setting = (props: SettingProps): React.ReactElement => {
   const handleTextChange = (html: string, key?: RichTextFormatKeys, value?: any): void => {
     const onlyPlaceholder = richTextUtils.isBlankRichText(text) && !!placeholder
     const property = !isInlineEditing && onlyPlaceholder ? 'placeholder' : 'text'
-    html = property === 'text' ? appConfigUtils.restoreResourceUrl(html) : html
+    html = property === 'text' && typeof appConfigUtils?.restoreResourceUrl === 'function'
+      ? appConfigUtils.restoreResourceUrl(html)
+      : html
     let config = propConfig.set(property, html)
     if (!isInlineEditing && key === RichTextFormatKeys.Color) {
       config = config.setIn(['style', 'color'], value)
@@ -359,6 +398,18 @@ const Setting = (props: SettingProps): React.ReactElement => {
           </SettingRow>
           <SettingRow className='mb-3' flow='no-wrap' label={translate('gaugePadding')}>
             <TextInput style={{ width: 80 }} type='number' value={localPadding} onChange={(_e, v) => setLocalPadding(v)} onAcceptValue={handlePaddingAccept} />
+          </SettingRow>
+          <SettingRow className='mb-3' flow='no-wrap' label={translate('threshold1')}>
+            <TextInput style={{ width: 80 }} type='number' value={localThreshold1} onChange={(_e, v) => setLocalThreshold1(v)} onAcceptValue={(v) => handleThresholdValueAccept(0, v)} />
+            <ThemeColorPicker className='ml-2' value={thresholds[0].color} onChange={color => handleThresholdColorChange(0, color)} />
+          </SettingRow>
+          <SettingRow className='mb-3' flow='no-wrap' label={translate('threshold2')}>
+            <TextInput style={{ width: 80 }} type='number' value={localThreshold2} onChange={(_e, v) => setLocalThreshold2(v)} onAcceptValue={(v) => handleThresholdValueAccept(1, v)} />
+            <ThemeColorPicker className='ml-2' value={thresholds[1].color} onChange={color => handleThresholdColorChange(1, color)} />
+          </SettingRow>
+          <SettingRow className='mb-3' flow='no-wrap' label={translate('threshold3')}>
+            <TextInput style={{ width: 80 }} type='number' value={localThreshold3} onChange={(_e, v) => setLocalThreshold3(v)} onAcceptValue={(v) => handleThresholdValueAccept(2, v)} />
+            <ThemeColorPicker className='ml-2' value={thresholds[2].color} onChange={color => handleThresholdColorChange(2, color)} />
           </SettingRow>
           <SettingRow className='mb-3' flow='no-wrap' tag='label' label={translate('textBold')}>
             <Switch checked={textBold} onChange={toggleTextBold} />
