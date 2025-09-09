@@ -7,6 +7,11 @@ interface Style {
   dynamicStyleConfig?: DynamicStyleConfig
 }
 
+export interface Threshold {
+  value: number
+  color: string
+}
+
 export interface Config {
   /**
    * Note: The placeholder must be a nested structure of tags with the text inside:
@@ -28,6 +33,7 @@ export interface Config {
   speedometerTickFont?: string
   speedometerTickSize?: number
   speedometerPadding?: number
+  speedometerThresholds?: Threshold[]
 }
 
 export type IMConfig = ImmutableObject<Config>
