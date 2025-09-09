@@ -66,87 +66,67 @@ export function Speedometer(props: SpeedometerProps): React.ReactElement {
     }
   })
 
-  const needleTransform = 'rotate(' + angle + ' 100 100)'
+  const needleTransform = `rotate(${angle} 100 100)`
 
-  return jsx('div', {
-    className: 'speedometer',
-    style: { width: '100%', height: '100%', padding },
-    children: jsx('svg', {
-      viewBox: '0 0 200 200',
-      xmlns: 'http://www.w3.org/2000/svg',
-      'aria-label': 'Gauge icon',
-      preserveAspectRatio: 'xMidYMid meet',
-      style: { width: '100%', height: '100%', overflow: 'visible' },
-      children: [
-        jsx('g', {
-          key: 'gauge',
-          fill: 'none',
-          strokeLinecap: 'round',
-          children: [
-            jsx('path', { key: 'arc-path', d: 'M 10 100 A 90 90 0 0 1 190 100', strokeWidth: 4, stroke: gaugeStroke }),
-            jsx('g', {
-              key: 'ticks',
-              strokeWidth: 4,
-              stroke: gaugeStroke,
-              children: ticks.map((t, i) =>
-                jsx('line', { key: i, x1: t.x1, y1: t.y1, x2: t.x2, y2: t.y2 })
-              )
-            }),
-            jsx('g', {
-              key: 'minor',
-              strokeWidth: 2,
-              stroke: gaugeStroke,
-              children: [
-                jsx('line', { key: 'top', x1: 100, y1: 88, x2: 100, y2: 82 }),
-                jsx('line', { key: 'right', x1: 112, y1: 100, x2: 118, y2: 100 }),
-                jsx('line', { key: 'bottom', x1: 100, y1: 112, x2: 100, y2: 118 }),
-                jsx('line', { key: 'left', x1: 88, y1: 100, x2: 82, y2: 100 }),
-                jsx('line', { key: 'ne', x1: 108, y1: 92, x2: 112, y2: 88 }),
-                jsx('line', { key: 'se', x1: 108, y1: 108, x2: 112, y2: 112 }),
-                jsx('line', { key: 'sw', x1: 92, y1: 108, x2: 88, y2: 112 }),
-                jsx('line', { key: 'nw', x1: 92, y1: 92, x2: 88, y2: 88 })
-              ]
-            }),
-            jsx('g', {
-              key: 'labels',
-              stroke: 'none',
-              children: ticks.map((t, i) =>
-                jsx('text', {
-                  key: 'label-' + i,
-                  x: t.lx,
-                  y: t.ly,
-                  textAnchor: 'middle',
-                  alignmentBaseline: 'middle',
-                  fontSize: tickFontSize,
-                  fontFamily: tickFontFamily,
-                  fill: tickColor,
-                  children: t.label.toString()
-                })
-              )
-            }),
-            jsx('g', {
-              key: 'needle',
-              stroke: needleStroke,
-              strokeWidth: 3,
-              children: [
-                jsx('circle', { key: 'hub', cx: 100, cy: 100, r: 12, fill: 'none' }),
-                jsx('line', { key: 'hand', x1: 100, y1: 100, x2: 100, y2: 50, transform: needleTransform })
-              ]
-            })
-          ]
-        }),
-        jsx('text', {
-          key: 'value',
-          x: 100,
-          y: 170,
-          textAnchor: 'middle',
-          fontSize: labelFontSize,
-          fontFamily: labelFontFamily,
-          fontWeight: labelBold ? 'bold' : 'normal',
-          fill: labelColor,
-          children: value.toFixed(0) + ' knt'
-        })
-      ]
-    })
-  })
+  return (
+    <div className='speedometer' style={{ width: '100%', height: '100%', padding }}>
+      <svg
+        viewBox='0 0 200 200'
+        xmlns='http://www.w3.org/2000/svg'
+        aria-label='Gauge icon'
+        preserveAspectRatio='xMidYMid meet'
+        style={{ width: '100%', height: '100%', overflow: 'visible' }}
+      >
+        <g fill='none' strokeLinecap='round'>
+          <path d='M 10 100 A 90 90 0 0 1 190 100' strokeWidth={4} stroke={gaugeStroke} />
+          <g strokeWidth={4} stroke={gaugeStroke}>
+            {ticks.map((t, i) => (
+              <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} />
+            ))}
+          </g>
+          <g strokeWidth={2} stroke={gaugeStroke}>
+            <line x1={100} y1={88} x2={100} y2={82} />
+            <line x1={112} y1={100} x2={118} y2={100} />
+            <line x1={100} y1={112} x2={100} y2={118} />
+            <line x1={88} y1={100} x2={82} y2={100} />
+            <line x1={108} y1={92} x2={112} y2={88} />
+            <line x1={108} y1={108} x2={112} y2={112} />
+            <line x1={92} y1={108} x2={88} y2={112} />
+            <line x1={92} y1={92} x2={88} y2={88} />
+          </g>
+          <g stroke='none'>
+            {ticks.map((t, i) => (
+              <text
+                key={`label-${i}`}
+                x={t.lx}
+                y={t.ly}
+                textAnchor='middle'
+                alignmentBaseline='middle'
+                fontSize={tickFontSize}
+                fontFamily={tickFontFamily}
+                fill={tickColor}
+              >
+                {t.label.toString()}
+              </text>
+            ))}
+          </g>
+          <g stroke={needleStroke} strokeWidth={3}>
+            <circle cx={100} cy={100} r={12} fill='none' />
+            <line x1={100} y1={100} x2={100} y2={50} transform={needleTransform} />
+          </g>
+        </g>
+        <text
+          x={100}
+          y={170}
+          textAnchor='middle'
+          fontSize={labelFontSize}
+          fontFamily={labelFontFamily}
+          fontWeight={labelBold ? 'bold' : 'normal'}
+          fill={labelColor}
+        >
+          {value.toFixed(0)} knt
+        </text>
+      </svg>
+    </div>
+  )
 }

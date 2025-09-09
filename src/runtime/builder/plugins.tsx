@@ -13,8 +13,13 @@ interface _TextPluginsProps {
 
 type TextPluginsProps = _TextPluginsProps & RichPluginRequiredProps
 
-const ARCADE_CONTENT_CAPABILITIES = [ArcadeContentCapability.Value, ArcadeContentCapability.Style]
-const DYNAMIC_STYLE_TYPES = Immutable([DynamicStyleType.Text])
+const ARCADE_CONTENT_CAPABILITIES = typeof ArcadeContentCapability !== 'undefined'
+  ? [ArcadeContentCapability.Value, ArcadeContentCapability.Style]
+  : []
+
+const DYNAMIC_STYLE_TYPES = typeof DynamicStyleType !== 'undefined'
+  ? Immutable([DynamicStyleType.Text])
+  : Immutable([])
 
 export const TextPlugins = (props: TextPluginsProps): React.ReactElement => {
   const { editor, formats, selection, useDataSources, widgetId, enabled, onInitResizeHandler } = props

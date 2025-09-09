@@ -73,6 +73,8 @@ const Setting = (props: SettingProps): React.ReactElement => {
     setLocalThreshold2(String(thresholds[1].value))
     setLocalThreshold3(String(thresholds[2].value))
   }, [thresholds])
+  const enableDynamicStyle = style?.enableDynamicStyle ?? false
+  const dynamicStyleConfig = style?.dynamicStyleConfig
   const text = propConfig.text
   const placeholder = propConfig.placeholder
   const placeholderText = React.useMemo(() => richTextUtils.getHTMLTextContent(placeholder) ?? '', [placeholder])
