@@ -1,4 +1,9 @@
-import { React, polished, type IMExpression, ExpressionResolverComponent, expressionUtils, DynamicStyleResolverComponent, type IMDynamicStyleConfig, type IMDynamicStyle } from 'jimu-core'
+import * as jimuCore from 'jimu-core';
+const { React, polished, ExpressionResolverComponent, expressionUtils } = jimuCore;
+type IMExpression = jimuCore.IMExpression;
+type IMDynamicStyleConfig = jimuCore.IMDynamicStyleConfig;
+type IMDynamicStyle = jimuCore.IMDynamicStyle;
+const DynamicStyleResolverComponent = (jimuCore as any).DynamicStyleResolverComponent;
 import { DownDoubleOutlined } from 'jimu-icons/outlined/directional/down-double'
 import { styled, useTheme } from 'jimu-theme'
 import { RichTextDisplayer, type RichTextDisplayerProps, Scrollable, type ScrollableRefProps, type StyleSettings, type StyleState, styleUtils } from 'jimu-ui'
@@ -250,12 +255,14 @@ export function Displayer(props: DisplayerProps): React.ReactElement {
           onChange={handleTooltipResolved}
         />
       }
-      <DynamicStyleResolverComponent
-        widgetId={widgetId}
-        useDataSources={useDataSources}
-        dynamicStyleConfig={dynamicStyleConfig}
-        onChange={handleArcadeChange}
-      />
+      {DynamicStyleResolverComponent && (
+        <DynamicStyleResolverComponent
+          widgetId={widgetId}
+          useDataSources={useDataSources}
+          dynamicStyleConfig={dynamicStyleConfig}
+          onChange={handleArcadeChange}
+        />
+      )}
     </Root>
   )
 }
