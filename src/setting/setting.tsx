@@ -263,7 +263,9 @@ const Setting = (props: SettingProps): React.ReactElement => {
   const handleTextChange = (html: string, key?: RichTextFormatKeys, value?: any): void => {
     const onlyPlaceholder = richTextUtils.isBlankRichText(text) && !!placeholder
     const property = !isInlineEditing && onlyPlaceholder ? 'placeholder' : 'text'
-    html = property === 'text' ? appConfigUtils.restoreResourceUrl(html) : html
+    html = property === 'text' && typeof appConfigUtils?.restoreResourceUrl === 'function'
+      ? appConfigUtils.restoreResourceUrl(html)
+      : html
     let config = propConfig.set(property, html)
     if (!isInlineEditing && key === RichTextFormatKeys.Color) {
       config = config.setIn(['style', 'color'], value)

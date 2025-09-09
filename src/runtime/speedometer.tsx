@@ -117,7 +117,7 @@ export function Speedometer(props: SpeedometerProps): React.ReactElement {
         </g>
         <text
           x={100}
-          y={140}
+          y={170}
           textAnchor='middle'
           fontSize={labelFontSize}
           fontFamily={labelFontFamily}
